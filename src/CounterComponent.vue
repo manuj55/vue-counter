@@ -21,13 +21,22 @@
       </select>
       <button type="submit" id="adjust-button"> Apply {{ operationType }}</button>
     </form>
+    <button id="Reset" :class="{ disabled: this.count <= 0 }" style="border: 2px solid blue" aria-label="reset button"
+      @click="resetCount">Reset</button>
+    <!-- Add a checkbox here which when true then only display logs -->
+    <!-- Logs Component -->
+    <LogsComponent title="Counter logs" :logs="logs"></LogsComponent>
   </div>
 </template>
+
+
 <script>
-
-
+import LogsComponent from "./LogsComponent.vue";
 export default {
   name: 'CounterComponent',
+  components: {
+    LogsComponent,
+  },
   data() {
     return {
       count: 0,
@@ -36,6 +45,8 @@ export default {
       operationType: "Add",
       increase: "Increase Count",
       decrease: "Decrease Count",
+      reset: "Reset Count",
+      skipWatcher: false,
     };
   },
 
@@ -45,12 +56,26 @@ export default {
     //allowed to make console logs or logging values
 
     count(newValue, oldValue) {
-      this.addLogs(`Count changed from ${oldValue} to ${newValue}`);
+      if (!this.skipWatcher) {
+        this.addLogs(`Count changed from ${oldValue} to ${newValue}`);
+      }
     }
   },
-
+  //what difference b/w methods and computed properties
+  //methods are used to perform actions and computed properties are used to perform calculations
   methods:
   {
+
+    resetCount() {
+      this.skipWatcher = true;
+      this.count = 0;
+      this.logs = [];
+      //this is used to make sure that the watcher is not called when we are updating the value of count
+      //it will wait for DOM to update and then it will set the value of skipWatcher to false
+      this.$nextTick(() => {
+        this.skipWatcher = false;
+      });
+    },
     //side effects in methods
     decreaseCount() {
       if (this.count > 0) {
@@ -73,9 +98,11 @@ export default {
       }
       if (this.operationType === "Add") {
         this.count += this.amount;
+        this.logs.unshift({ message: `Added ${parsedAmount} to the count`, id: new Date().toLocaleString(), });
       }
       else if (this.operationType === "Subtract" && this.count >= this.amount) {
         this.count -= this.amount;
+        this.logs.unshift({ message: `Subtracted ${parsedAmount} from the count`, id: new Date().toLocaleString(), });
       }
 
       this.amount = 0;
